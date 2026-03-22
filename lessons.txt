@@ -1,0 +1,9 @@
+leading-lines
+edge-to-edge-lines
+negative-space
+framing-within-a-frame
+diagonals
+compression-and-layers
+figure-ground
+light-and-shadow-as-shape
+pattern-and-repetition
