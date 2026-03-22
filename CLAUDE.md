@@ -8,24 +8,19 @@ https://github.com/o4dvasq/photography
 
 ## Key Files
 ```
-photography/                        ← git repo root
+~/Dropbox/projects/photography/     ← git repo root
 ├── CLAUDE.md                       ← you are here
 ├── import.sh                       ← Stage 1: interactive import from inbox
 ├── upload.sh                       ← Stage 2: auto-detect and sync to R2
-├── generate_gallery.py             ← builds static HTML gallery (not yet built)
 ├── lessons.txt                     ← curriculum lesson list (editable)
 ├── projects.txt                    ← auto-maintained project list
-├── docs/
-│   ├── PROJECT_STATE.md            ← current project state (update every session)
-│   ├── DECISIONS.md                ← append-only decision log
-│   ├── ARCHITECTURE.md             ← system architecture
-│   └── specs/                      ← feature specs from design sessions
-│       └── SPEC_[feature-name].md
-└── docs/gallery/                   ← GitHub Pages output (generated)
-    ├── index.html
-    └── curriculum/
-        └── [lesson-slug]/
-            └── index.html
+└── docs/
+    ├── PROJECT_STATE.md            ← current project state (update every session)
+    ├── DECISIONS.md                ← append-only decision log
+    ├── ARCHITECTURE.md             ← system architecture
+    └── specs/
+        ├── SPEC_[feature-name].md  ← ready to implement
+        └── implemented/            ← completed specs
 ```
 
 ## Stack

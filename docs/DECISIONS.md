@@ -38,3 +38,16 @@ Append-only log of key implementation decisions. Never overwrite — only add ne
 - rclone --dry-run for comparison — unreliable when source folder doesn't exist yet; replaced with ls-based count comparison
 
 ---
+
+## March 22, 2026 — Repo Flatten and Workflow Cleanup
+
+**Task:** Flatten nested git repo, clean up migration artifacts, establish Claude Workflow System compatibility
+
+**Decisions:**
+- **Flatten inner repo to project root:** The Dropbox project folder `~/Dropbox/projects/photography/` is now the git repo root. The old structure had an orphan outer `.git` (no remote) wrapping an inner `photography/` dir with the real GitHub-connected `.git`. Flattened so one repo = one folder.
+- **Preserve inner repo's git history:** The inner repo's `.git` (with GitHub remote and full commit history) was kept as the authoritative repo. The outer orphan `.git` was deleted.
+- **Dropbox syncs source files, git/GitHub syncs git state:** Consistent with all other projects. `.git` dir has xattr Dropbox exclusion applied.
+- **from-crm-cleanup/ fully sorted and deleted:** PHOTOGRAPHY_CURRICULUM.md and CONTEXT_HANDOFF.md kept as reference docs in docs/. photography-uploader-spec.md kept as a future spec in docs/specs/. Stale duplicates (CLAUDE.md, PROJECT_STATE.md, DECISIONS.md, ARCHITECTURE.md) deleted.
+- **docs/specs/implemented/ created:** Completed specs move here. Keeps docs/specs/ clean — anything there is work not yet done.
+
+---

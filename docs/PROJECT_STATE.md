@@ -11,19 +11,15 @@
 - **projects.txt** — Auto-maintained by import.sh. Starts empty, grows as projects are created.
 - **Cloudflare R2** — Bucket "oscar-photography" created, public access enabled, rclone configured with read+write API token.
 - **Folder structure** — ~/Documents/Photography/ with inbox/, curriculum/, projects/ all working on iCloud sync.
+- **Repo structure** — Flattened. ~/Dropbox/projects/photography/ IS the git repo root. GitHub remote confirmed working.
+- **docs/** — Organized: ARCHITECTURE.md (current), PROJECT_STATE.md, DECISIONS.md, CONTEXT_HANDOFF.md, PHOTOGRAPHY_CURRICULUM.md, specs/ with implemented/ subdirectory.
 
-## What Was Just Completed
-- Fixed PHOTOGRAPHY_ROOT path ($HOME/Photography → $HOME/Documents/Photography)
-- Replaced bash 4 mapfile with macOS-compatible while-read loop
-- Fixed dry-run to skip rclone entirely (was failing on non-existent folder)
-- Fixed R2 API token permissions (read-only → read+write)
-- Split single upload.sh into two-stage pipeline (import.sh + upload.sh)
-- Replaced flag-based interface with interactive menus
-- Added lessons.txt / projects.txt as persistent config
-- Created CLAUDE.md, PROJECT_STATE.md, DECISIONS.md, docs/specs/ for prompt workflow
-- Flattened nested git repo structure: photography/photography/ → photography/ (GitHub remote preserved)
-- Sorted docs from from-crm-cleanup/ into proper locations
-- Organized docs/specs/ with implemented/ subdirectory
+## What Was Just Completed (March 22, 2026)
+- Flattened nested git repo: inner `photography/photography/` moved to project root, GitHub remote preserved
+- Deleted parent-level leftovers: Inbox/, curriculum/, projects/, upload_log.txt, stale README, .gitignore, orphan .git
+- Sorted from-crm-cleanup/ into proper locations, deleted stale duplicate docs
+- Created docs/specs/implemented/ and filed completed specs there
+- Updated ARCHITECTURE.md to reflect two-script pipeline and correct repo location
 
 ## Known Issues
 - generate_gallery.py not yet built — upload.sh skips gallery step gracefully

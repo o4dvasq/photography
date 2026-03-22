@@ -104,6 +104,7 @@ A post-shoot pipeline that organizes, archives, and publishes Fuji X-T50 JPEG ph
         ├── README.md
         ├── photography-uploader-spec.md  ← future feature
         └── implemented/
+            └── photography-workflow-spec.md
 
 ~/Documents/Photography/            ← iCloud synced (NOT in git)
 ├── inbox/                          ← all new photos land here
