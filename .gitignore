@@ -2,3 +2,30 @@
 __pycache__/
 *.pyc
 .venv/
+
+# Xcode
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+*.xcworkspace/*
+!*.xcworkspace/contents.xcworkspacedata
+DerivedData/
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Xcode user settings
+xcuserdata/
+
+# macOS
+.Trashes
+
+# Specs live in Dropbox, not git
+/docs/specs/
