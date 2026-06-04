@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Photo Pipeline needs access to your Photos library to import resized images for Instagram sharing via iCloud Photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo Pipeline needs access to your Photos library to import resized images for Instagram sharing via iCloud Photos.</string>
+</dict>
+</plist>

@@ -1,12 +1,12 @@
 # Photography Workflow — Architecture
 **Repo:** https://github.com/o4dvasq/photography
-**Last updated:** March 22, 2026
+**Last updated:** March 30, 2026
 
 ---
 
 ## Overview
 
-A post-shoot pipeline that organizes, archives, and publishes Fuji X-T50 JPEG photos to a public gallery — enabling persistent coach review without per-session file uploads.
+A native macOS app that manages the full photography post-processing pipeline for a Fuji X-T series shooter. Handles SD card import with RAW/JPEG splitting, Instagram-optimized resizing, and iCloud Photos handoff for iPhone transfer.
 
 ---
 
@@ -14,175 +14,258 @@ A post-shoot pipeline that organizes, archives, and publishes Fuji X-T50 JPEG ph
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    LOCAL (Mac)                          │
+│                 PHOTO PIPELINE APP                      │
+│              (Native macOS menubar app)                 │
 │                                                         │
-│  Fuji X-T50                                            │
-│      │ SD card / USB / Image Capture                   │
-│      ▼                                                  │
-│  ~/Documents/Photography/inbox/   ← staging area       │
-│      │                                                  │
-│  import.sh ──────────────────────────────────────────► │
-│      │  (exiftool rename + folder creation)             │
-│      ▼                                                  │
-│  ~/Documents/Photography/curriculum/YYYY-MM-week-##-name│
-│      │                             (iCloud synced)      │
-│      │  Photomator references files in place            │
-└──────┼──────────────────────────────────────────────────┘
-       │ rclone sync (upload.sh)
-       ▼
-┌─────────────────────────────────────────────────────────┐
-│              CLOUDFLARE R2 (cloud storage)              │
-│                                                         │
-│  Bucket: oscar-photography                              │
-│  curriculum/2025-03-week-02-edge-to-edge-lines/         │
-│      ├── 20250308_w02_001.jpg                           │
-│      └── ...                                            │
-│                                                         │
-│  Public URL base:                                       │
-│  https://pub-f7fa9781c49c409dbf4dfad2df808122.r2.dev   │
-└─────────────────────────────────────────────────────────┘
-       │ generate_gallery.py reads folder structure
-       ▼
-┌─────────────────────────────────────────────────────────┐
-│            GITHUB PAGES (public gallery)                │
-│                                                         │
-│  https://o4dvasq.github.io/photography/                 │
-│      /index.html          ← all weeks/projects          │
-│      /curriculum/                                       │
-│          /2025-03-week-02-edge-to-edge-lines/           │
-│              /index.html  ← thumbnail grid              │
+│  ┌──────────────┐                                       │
+│  │  Import Tab  │                                       │
+│  └──────────────┘                                       │
+│         │                                               │
+│  SD card auto-detect (NSWorkspace)                      │
+│         │                                               │
+│         ▼                                               │
+│  Copy (never move) from SD card                         │
+│         │                                               │
+│         ▼                                               │
+│  ~/Photography/Imports/YYYY-MM-DD/                      │
+│      ├── RAW/      ← .RAF files                         │
+│      └── JPEG/     ← in-camera JPEGs                    │
+│         │                                               │
+│         ▼                                               │
+│  Photomator edits RAFs in place                         │
+│         │                                               │
+│         ▼                                               │
+│  User exports finished JPEGs to:                        │
+│  ~/Photography/Exports/Portfolio/                       │
+│         │                                               │
+│         ▼                                               │
+│  ┌──────────────┐                                       │
+│  │  Export Tab  │                                       │
+│  └──────────────┘                                       │
+│         │                                               │
+│    ┌────┴────┐                                          │
+│    ▼         ▼                                          │
+│  Resize    Send to Photos (PhotoKit)                    │
+│    │         │                                          │
+│    ▼         │                                          │
+│  ~/Photography/Exports/Instagram-Staged/                │
+│    (1080px long edge, GPS stripped)                     │
+│         │    │                                          │
+│         └────┘                                          │
+│              ▼                                          │
+│       iCloud Photos Library                             │
+│              │                                          │
+│              ▼                                          │
+│        iPhone (auto-sync)                               │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Infrastructure
+## Technology Stack
 
-### Cloudflare R2
-| Property | Value |
+| Layer | Technology |
 |---|---|
-| Bucket name | oscar-photography |
-| Account ID | 1d83c25c1ff525735d3b68ab95b95054 |
-| S3 Endpoint | https://1d83c25c1ff525735d3b68ab95b95054.r2.cloudflarestorage.com |
-| Public Dev URL | https://pub-f7fa9781c49c409dbf4dfad2df808122.r2.dev |
-| Public access | Enabled |
+| Platform | macOS 13 (Ventura) minimum |
+| UI Framework | SwiftUI |
+| Image Processing | Core Image, vImage, CGImage |
+| Photos Integration | PhotoKit (PHPhotoLibrary) |
+| SD Card Detection | NSWorkspace volume mount notifications |
+| State Persistence | JSON files in ~/Library/Application Support/PhotoPipeline/ |
+| Dependencies | None (zero external dependencies) |
 
-### rclone
-| Property | Value |
-|---|---|
-| Remote name | r2 |
-| Type | S3 / Cloudflare |
-| Status | Installed, configured, tested |
+### Retired Infrastructure
 
-### GitHub Pages
-| Property | Value |
-|---|---|
-| Repo | https://github.com/o4dvasq/photography |
-| Pages source | main branch → /docs folder |
-| Gallery URL | https://o4dvasq.github.io/photography/ |
-| Status | Repo created, Pages not yet enabled |
+The following components were part of the previous shell-based pipeline and are no longer used:
+
+- **Cloudflare R2** — Bucket "oscar-photography" retired, public gallery pipeline removed
+- **rclone** — No longer needed, dependency removed
+- **exiftool** — No longer needed, dependency removed
+- **GitHub Pages** — Gallery feature deferred
+- **Python/generate_gallery.py** — Never built, pipeline retired
 
 ---
 
 ## Filesystem Layout
 
+### Git Repository (Dropbox-synced, .git excluded)
+
 ```
-~/Dropbox/projects/photography/     ← git repo root (this repo)
-├── CLAUDE.md
-├── README.md
-├── import.sh                       ← Stage 1: import from inbox
-├── upload.sh                       ← Stage 2: sync to R2
-├── lessons.txt                     ← curriculum lesson list
-├── projects.txt                    ← auto-maintained project list
+~/Dropbox/projects/photography/     ← git repo root
+├── CLAUDE.md                       ← project instructions
+├── .gitignore
+├── import.sh                       ← RETIRED (replaced by app)
+├── upload.sh                       ← RETIRED (replaced by app)
+├── lessons.txt                     ← RETIRED
+├── projects.txt                    ← RETIRED
+├── PhotoPipeline/                  ← Xcode project (created manually)
+│   ├── PhotoPipeline.xcodeproj
+│   └── PhotoPipeline/
+│       ├── PhotoPipelineApp.swift
+│       ├── ContentView.swift
+│       ├── Views/
+│       │   ├── ImportView.swift
+│       │   ├── ExportView.swift
+│       │   └── PreferencesView.swift
+│       ├── Models/
+│       │   ├── AppState.swift
+│       │   ├── ImportSession.swift
+│       │   └── ExportFile.swift
+│       └── Services/
+│           ├── SDCardDetector.swift
+│           ├── CardScanner.swift
+│           ├── FileImporter.swift
+│           ├── ImageResizer.swift
+│           ├── PhotosImporter.swift
+│           └── StateManager.swift
 └── docs/
     ├── ARCHITECTURE.md             ← this file
     ├── PROJECT_STATE.md
     ├── DECISIONS.md
     ├── CONTEXT_HANDOFF.md
     ├── PHOTOGRAPHY_CURRICULUM.md
+    ├── Specs-history.md
     └── specs/
         ├── README.md
-        ├── photography-uploader-spec.md  ← future feature
         └── implemented/
-            └── photography-workflow-spec.md
+            └── SPEC_photo-pipeline-app.md
 
-~/Documents/Photography/            ← iCloud synced (NOT in git)
-├── inbox/                          ← all new photos land here
-├── curriculum/                     ← 20-week course photos
-│   └── 2025-03-week-02-edge-to-edge-lines/
-└── projects/                       ← personal/travel work
+### Photography Storage (NOT in git, configurable in app preferences)
+
+```
+~/Photography/                      ← default base path
+├── Imports/
+│   ├── 2026-03-30/                 ← dated session folders
+│   │   ├── RAW/                    ← .RAF files from camera
+│   │   └── JPEG/                   ← in-camera JPEGs
+│   └── 2026-03-30-b/               ← collision suffix if re-import same day
+└── Exports/
+    ├── Portfolio/                  ← Photomator export destination (full-res edited JPEGs)
+    └── Instagram-Staged/           ← resized output (1080px long edge, GPS stripped)
+```
+
+### App State (NOT in git)
+
+```
+~/Library/Application Support/PhotoPipeline/
+├── state.json                      ← preferences
+├── import_history.json             ← log of all import sessions
+└── photos_import_log.json          ← tracks files sent to Photos.app
 ```
 
 ---
 
 ## File Naming Convention
 
-**Format:** `YYYYMMDD_w##_###.jpg`
+The app preserves original Fuji filenames (DSCF####.jpg, DSCF####.RAF) during import. No renaming occurs.
 
-| Segment | Example | Notes |
-|---|---|---|
-| Date | 20250308 | From EXIF, not filesystem date |
-| Week | w02 | Zero-padded |
-| Sequence | 001 | Zero-padded, per-shoot |
-
-**Project files:** `YYYYMMDD_projectslug_###.jpg`
-
-Original Fuji filenames (DSCF####.jpg) are not preserved after rename.
-
----
-
-## Scripts
-
-### import.sh
-**Language:** Bash
-**Dependencies:** exiftool (Homebrew)
-
-Interactive menu-driven import. Shows numbered list of lessons (from lessons.txt) and projects (from projects.txt). Reads EXIF dates, renames files, moves from inbox to curriculum/project folders. Supports multi-session imports with auto-incrementing sequence numbers.
-
-### upload.sh
-**Language:** Bash
-**Dependencies:** rclone, exiftool (Homebrew)
-
-Zero-argument upload. Compares local JPEG counts against R2 file counts to find un-synced folders. Shows pending list, user picks one. Syncs via rclone, triggers gallery regeneration and git push.
-
-### generate_gallery.py
-**Language:** Python 3
-**Status:** Not yet built
-
-Walks ~/Documents/Photography/curriculum/ and projects/, reads R2 public URLs, generates static HTML gallery under docs/.
+Exported files for Instagram receive a `_ig` suffix:
+- Original: `DSCF0042.jpg`
+- Instagram export: `DSCF0042_ig.jpg`
 
 ---
 
 ## Post-Shoot Workflow
 
 ```
-1. Shoot (max 10 frames/day, Acros B&W JPEG)
-2. Import: drag JPEGs to ~/Documents/Photography/inbox/
-3. Run: ./import.sh  → renames + moves to curriculum/project folder
-4. Curate in Photomator, delete rejects
-5. Run: ./upload.sh  → syncs to R2, regenerates gallery
-6. Paste gallery URL into coaching chat
+1. Shoot with Fuji X-T50 (RAW+JPEG mode, Acros B&W film simulation)
+2. Insert SD card → Photo Pipeline detects and notifies
+3. Import tab: select card, confirm date, click Import
+   → RAFs go to ~/Photography/Imports/YYYY-MM-DD/RAW/
+   → JPEGs go to ~/Photography/Imports/YYYY-MM-DD/JPEG/
+4. Open Photomator → edit RAFs from Imports/.../RAW/
+5. Export finished JPEGs to ~/Photography/Exports/Portfolio/
+6. Export tab: click "Export to Instagram"
+   → Resized JPEGs appear in ~/Photography/Exports/Instagram-Staged/
+7. Export tab: click "Send to Photos"
+   → Files import to Photos.app, sync to iPhone via iCloud
+8. Open Instagram on iPhone → images available in Photos picker
 ```
+
+---
+
+## App Architecture Details
+
+### Import Flow (ImportView + Services)
+
+1. **SDCardDetector** monitors NSWorkspace for volume mount notifications
+2. On SD card detection: post macOS notification, badge menubar icon
+3. **CardScanner** recursively scans `DCIM/` for `.RAF` and `.JPG`/`.JPEG` files (case-insensitive)
+4. User selects session date (defaults to today), clicks Import
+5. **FileImporter** creates `Imports/YYYY-MM-DD/{RAW,JPEG}` with collision suffix if needed
+6. Files are **copied** (not moved) from SD card to destination folders
+7. **ImportSession** recorded in import_history.json
+8. User offered "Reveal RAW folder in Finder" to start Photomator edits
+
+### Export Flow (ExportView + Services)
+
+1. **ExportView** scans `Exports/Portfolio/` for new JPEGs
+2. User clicks "Export to Instagram"
+3. **ImageResizer** processes each file:
+   - Read EXIF orientation tag, apply rotation correction
+   - If long edge <= 1080px: copy as-is to Instagram-Staged
+   - Otherwise: resize to 1080px long edge, preserve aspect ratio
+   - Strip GPS metadata if enabled in preferences
+   - Save as `filename_ig.jpg` with configurable JPEG quality
+4. User clicks "Send to Photos"
+5. **PhotosImporter** checks permission status:
+   - Not determined: request permission with explanation
+   - Denied: show banner with "Open Settings" button
+   - Authorized: proceed with import
+6. **PhotoKit** imports files from Instagram-Staged into Photos library
+7. **StateManager** records imported file paths to prevent duplicates
+8. iCloud Photos syncs to iPhone automatically
+
+### State Persistence (StateManager)
+
+All state stored as JSON in `~/Library/Application Support/PhotoPipeline/`:
+
+- **state.json** — user preferences (paths, flags, export settings)
+- **import_history.json** — array of ImportSession objects (date, counts, source volume)
+- **photos_import_log.json** — set of file paths already sent to Photos.app
+
+### Menubar Behavior (AppDelegate)
+
+- Persistent menubar icon (camera glyph) even when main window closed
+- Menu items: Open / Import from SD / Export pending / Quit
+- Badge icon when SD card detected
+- App can run in background with main window closed
+
+---
+
+## Permissions Required
+
+| Permission | Framework | Prompt Timing | Denial Behavior |
+|---|---|---|---|
+| Photos (add-only) | PhotoKit | First use of "Send to Photos" | Banner shown on Export tab, "Export to Instagram" still works |
+| Removable volumes | NSWorkspace | First SD card access | System handles prompt, no app-level fallback needed |
+
+No network access required or requested. App is fully local.
 
 ---
 
 ## Build Status
 
-| Step | Description | Status |
-|---|---|---|
-| 1 | import.sh | ✅ Built — needs real-world test |
-| 2 | upload.sh | ✅ Built — needs real-world test |
-| 3 | generate_gallery.py | 🔲 Not started |
-| 4 | Gallery HTML template | 🔲 Not started |
-| 5 | GitHub Pages enable | 🔲 Not started |
+| Component | Status |
+|---|---|
+| Swift source files | ✅ Complete |
+| Xcode project creation | 🔲 Manual setup required |
+| Compilation | 🔲 Not yet attempted |
+| SD card detection | 🔲 Needs real-world testing |
+| Import with collision handling | 🔲 Needs testing |
+| Instagram resize + GPS strip | 🔲 Needs testing |
+| PhotoKit import | 🔲 Needs testing |
+| State persistence | 🔲 Needs testing |
+| Menubar behavior | 🔲 Needs testing |
 
 ---
 
 ## Dependencies
 
-| Tool | Install | Purpose |
-|---|---|---|
-| rclone | `brew install rclone` | R2 sync |
-| exiftool | `brew install exiftool` | EXIF date extraction |
-| Python 3 | Pre-installed on macOS | Gallery generator |
-| git | Pre-installed on macOS | GitHub Pages deploy |
+**None.** The app has zero external dependencies. All functionality implemented using macOS frameworks:
+- SwiftUI (UI)
+- AppKit (menubar, file dialogs, workspace notifications)
+- Core Image / vImage (image resize)
+- ImageIO (EXIF reading, JPEG encoding, metadata stripping)
+- PhotoKit (Photos library import)
+- Foundation (JSON persistence, file management)

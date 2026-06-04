@@ -26,6 +26,3 @@ xcuserdata/
 
 # macOS
 .Trashes
-
-# Specs live in Dropbox, not git
-/docs/specs/

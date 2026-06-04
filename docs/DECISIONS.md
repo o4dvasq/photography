@@ -51,3 +51,24 @@ Append-only log of key implementation decisions. Never overwrite — only add ne
 - **docs/specs/implemented/ created:** Completed specs move here. Keeps docs/specs/ clean — anything there is work not yet done.
 
 ---
+
+## March 30, 2026 — Pipeline Replacement: Native macOS App
+
+**Task:** Replace shell-based photography pipeline with a native SwiftUI menubar app
+
+**Decisions:**
+- **Native macOS app over shell scripts:** The terminal-based pipeline (import.sh, upload.sh) required too many manual steps and external dependencies (exiftool, rclone, Python). A native app with SD card auto-detection and one-click export eliminates friction.
+- **Full replacement, not parallel tool:** The R2/GitHub Pages gallery pipeline, curriculum/lessons organization, and all shell scripts are retired. The new app handles the complete workflow: SD card import, Photomator handoff, Instagram resize, and iCloud Photos sync.
+- **RAW files are now first-class:** Reversing the March 8 "JPEG only, no RAW" decision. Photomator now edits RAF files directly. The import step splits RAFs and JPEGs into separate folders within each dated session.
+- **Date-based sessions over curriculum/lessons:** Replaced lesson-based folder naming (lessons.txt, projects.txt) with simple YYYY-MM-DD session folders. The curriculum structure added complexity without matching the actual workflow.
+- **PhotoKit over AppleScript:** Using PHPhotoLibrary for iCloud Photos import. Reliable across macOS versions, proper permission model, no fragile scripting bridge.
+- **Zero external dependencies:** No exiftool, no rclone, no Python, no Homebrew. Core Image/vImage for resize, PhotoKit for Photos import, NSWorkspace for SD detection. Everything ships in the .app.
+- **Instagram resize with no-upscale rule:** Scale long edge to 1080px, but if source is already <= 1080px, copy as-is. No cropping, no padding. Strip GPS metadata.
+
+**Retired:**
+- import.sh, upload.sh, lessons.txt, projects.txt
+- R2 bucket workflow, gallery generation, GitHub Pages gallery
+- ~/Documents/Photography/ folder structure
+- exiftool, rclone, Python dependencies
+
+---

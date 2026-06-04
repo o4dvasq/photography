@@ -1,38 +1,100 @@
 # PROJECT_STATE.md
-**Last updated:** March 22, 2026
-**Session:** Repo flatten and workflow cleanup
+**Last updated:** March 30, 2026
+**Session:** Native macOS app implementation
 
 ---
 
 ## What's Built and Working
-- **import.sh** — Interactive menu-driven import. Shows numbered list of lessons (from lessons.txt) and projects (from projects.txt). Reads EXIF dates, renames files, moves from inbox to curriculum/project folders. Supports multi-session imports into the same lesson folder with auto-incrementing sequence numbers. Slugifies new project names and appends to projects.txt.
-- **upload.sh** — Zero-argument upload. Compares local JPEG counts against R2 file counts to find un-synced folders. Shows pending list, user picks one (auto-selects if only one). Syncs via rclone, then triggers gallery regeneration and git push.
-- **lessons.txt** — 9 lessons defined (leading-lines through pattern-and-repetition). Editable plain text, one slug per line.
-- **projects.txt** — Auto-maintained by import.sh. Starts empty, grows as projects are created.
-- **Cloudflare R2** — Bucket "oscar-photography" created, public access enabled, rclone configured with read+write API token.
-- **Folder structure** — ~/Documents/Photography/ with inbox/, curriculum/, projects/ all working on iCloud sync.
-- **Repo structure** — Flattened. ~/Dropbox/projects/photography/ IS the git repo root. GitHub remote confirmed working.
-- **docs/** — Organized: ARCHITECTURE.md (current), PROJECT_STATE.md, DECISIONS.md, CONTEXT_HANDOFF.md, PHOTOGRAPHY_CURRICULUM.md, specs/ with implemented/ subdirectory.
 
-## What Was Just Completed (March 22, 2026)
-- Flattened nested git repo: inner `photography/photography/` moved to project root, GitHub remote preserved
-- Deleted parent-level leftovers: Inbox/, curriculum/, projects/, upload_log.txt, stale README, .gitignore, orphan .git
-- Sorted from-crm-cleanup/ into proper locations, deleted stale duplicate docs
-- Created docs/specs/implemented/ and filed completed specs there
-- Updated ARCHITECTURE.md to reflect two-script pipeline and correct repo location
+### Photo Pipeline App (Native macOS)
+- **PhotoPipelineApp.swift** — SwiftUI menubar app entry point with SD card detection
+- **Import tab** — SD card auto-detection, RAW/JPEG split into dated session folders, progress tracking
+- **Export tab** — Instagram-optimized resize (1080px long edge), PhotoKit import to iCloud Photos
+- **Preferences** — Configurable paths, auto-open behavior, GPS stripping, JPEG quality
+- **Services layer** — SDCardDetector, CardScanner, FileImporter, ImageResizer, PhotosImporter, StateManager
+- **Models** — AppState, ImportSession, ExportFile
+- **Folder structure** — `~/Photography/Imports/YYYY-MM-DD/{RAW,JPEG}`, `~/Photography/Exports/{Portfolio,Instagram-Staged}`
 
-## Known Issues
-- generate_gallery.py not yet built — upload.sh skips gallery step gracefully
-- GitHub Pages not yet enabled on repo
-- Gallery HTML template not yet designed
+### Retired Components
+- **import.sh, upload.sh** — Replaced by native app
+- **lessons.txt, projects.txt** — Curriculum structure replaced by date-based sessions
+- **R2/GitHub Pages gallery pipeline** — Deferred (may be revisited)
+- **generate_gallery.py** — Never built; pipeline retired
+- **~/Documents/Photography/** — Replaced by `~/Photography/`
 
-## Next Up
-1. Build generate_gallery.py — reads curriculum/ and projects/ folders, outputs static HTML
-2. Design gallery HTML template — responsive grid, thumbnails link to full-res R2 URLs
-3. Enable GitHub Pages on /docs folder
-4. End-to-end test: import → curate → upload → gallery live at public URL
+### Repository
+- **Location:** `~/Dropbox/projects/photography/` (git repo root)
+- **Remote:** https://github.com/o4dvasq/photography
+- **Structure:** Swift source code in `PhotoPipeline/`, docs in `docs/`, specs in `docs/specs/`
+
+---
+
+## What Was Just Completed (March 30, 2026)
+
+### Native App Implementation
+- Complete SwiftUI codebase for macOS menubar app
+- SD card detection via NSWorkspace volume mount notifications
+- RAW/JPEG file import with date-based folder organization
+- Collision handling for same-day re-imports (suffixes: -b, -c, ... -z, -27, ...)
+- Instagram resize with EXIF orientation correction and GPS stripping
+- PhotoKit integration for iCloud Photos import
+- Permission handling with clear UI for Photos access denial
+- State persistence (import history, Photos import log, preferences)
+
+### Architecture Shift
+- Replaced shell scripts with native code (zero external dependencies)
+- Changed from lesson-based to date-based organization
+- Integrated RAW files as first-class workflow (Photomator edits RAFs directly)
+- Moved from R2 public gallery to private iCloud Photos sync
+
+---
+
+## Known Limitations
+
+### Manual Setup Required
+- Xcode project must be created manually and source files added
+- App must be compiled in Xcode (no CLI build tested yet)
+- No automated tests (acceptance criteria verification requires manual testing)
+
+### PhotoKit Considerations
+- Requires macOS 13 (Ventura) minimum
+- Photos permission must be granted by user for Send to Photos feature
+- Import tracking prevents duplicates but relies on file paths (renames break tracking)
+
+### SD Card Detection
+- Detects removable volumes via NSWorkspace
+- May trigger on non-SD removable media (USB drives, etc.)
+- No filtering by DCIM folder presence (scans any selected volume)
+
+---
+
+## Next Steps
+
+### Immediate (Testing Phase)
+1. Create Xcode project, add Swift source files
+2. Build and run on macOS 13+ test machine
+3. Test SD card detection with actual Fuji X-T50 card
+4. Verify RAW/JPEG split, date folder creation, collision handling
+5. Test Instagram resize with various image orientations and dimensions
+6. Test PhotoKit import to iCloud Photos
+7. Verify state persistence across app restarts
+
+### Short-Term Enhancements
+1. Add keyboard shortcuts for Import/Export actions
+2. Implement drag-and-drop for manual folder selection
+3. Add notification on import/export completion
+4. Show storage space available before import
+5. Add "Reveal in Finder" for Instagram-Staged folder
+
+### Deferred (Future Consideration)
+- Portfolio website upload (R2 sync + gallery generation)
+- Glass feed integration
+- Batch metadata editing
+- RAW preview in app (Photomator handles this)
+- iPhone companion app
+
+---
 
 ## Open Design Questions
-- Gallery structure: should docs/gallery/ be separate from docs/ root, or should gallery HTML live directly in docs/?
-- Thumbnail strategy: generate smaller thumbnails locally before upload, or serve full-res from R2 with CSS scaling?
-- Gallery index page: cards with shot count + date range, or simple list?
+
+None. Core workflow decisions finalized in SPEC_photo-pipeline-app.md.
